@@ -7,19 +7,26 @@ import datetime
 
 app = Flask(__name__)
 
-# Generate RSA key pair
-private_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=2048,
-)
+######################## Generate RSA key pair ###########################################
+def generate_key_pair():
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+    )
+    public_key = private_key.public_key()
+    return private_key, public_key
 
-public_key = private_key.public_key()
+private_key, public_key = generate_key_pair()
 
-# Key ID and expiry timestamp
+######################## Key ID and expiry timestamp ######################################
 kid = 'my-key-id'
-expiry_timestamp = datetime.datetime.utcnow() + datetime.timedelta(days=1)
 
-# RESTful JWKS endpoint
+def generate_expiry_timestamp():
+    return datetime.datetime.utcnow() + datetime.timedelta(days=1)
+
+expiry_timestamp = generate_expiry_timestamp()
+
+######################## RESTful JWKS endpoint ############################################
 @app.route('/jwks', methods=['GET'])
 def jwks():
     if datetime.datetime.utcnow() > expiry_timestamp:
@@ -42,16 +49,16 @@ def jwks():
     }
     return jsonify(jwks_data)
 
-# Authentication endpoint
+############################Authentication endpoint########################################
 @app.route('/auth', methods=['POST'])
 def auth():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
 
-    # Mock authentication
+    ############################ Mock authentication ######################################
     if username == 'userABC' and password == 'password123':
-        # Issue JWT with kid in header
+        # Introduce JWT with header kid #
         token_payload = {
             "sub": username,
             "exp": expiry_timestamp,
@@ -61,7 +68,7 @@ def auth():
         token = jwt.encode(token_payload, private_key, algorithm='RS256', headers={"kid": kid})
         return jsonify(token=token.decode('utf-8'))
 
-    return jsonify(error='Invalid credentials'), 401
+    return jsonify(error='Authentication failed'), 401
 
 if __name__ == '__main__':
     app.run(port=8080)
