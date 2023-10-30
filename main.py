@@ -65,10 +65,11 @@ def auth():
             "iss": "your_issuer",
             "aud": "your_audience",
         }
-        token = jwt.encode(token_payload, private_key, algorithm='RS256', headers={"kid": kid})
-        return jsonify(token=token.decode('utf-8'))
+        token_bytes = jwt.encode(token_payload, private_key, algorithm='RS256', headers={"kid": kid})
+        return jsonify(token=token_bytes)
 
     return jsonify(error='Authentication failed'), 401
+
 
 if __name__ == '__main__':
     app.run(port=8080)
